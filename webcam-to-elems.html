@@ -1,0 +1,71 @@
+<!doctype html>
+<style type="text/css" media="screen">
+	.pixel{
+		float: left;
+		width: 2px;
+		height: 2px;
+	}
+</style>
+<script type="text/javascript" charset="utf-8">
+(function(){
+	var video, canvas, ctx, flag
+		// ratio = 80 //Para el experimento del dom
+		ratio = 200
+
+	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
+	
+	window.URL = window.URL || window.webkitURL
+
+	navigator.getUserMedia({video: true}, function(localMediaStream) { 
+		video = document.createElement("video")
+		video.autoplay = true
+		video.src = window.URL.createObjectURL(localMediaStream)
+		// video.style.display = 'none'
+		// document.body.appendChild(video)
+		
+		canvas = document.createElement('canvas')
+		document.body.appendChild(canvas)
+		canvas.width = video.videoWidth
+		canvas.height = video.videoHeight
+		ctx = canvas.getContext('2d')
+		prepareVideoCanvas()
+	}, function(error) {
+		console.log(error)
+	})
+
+	function prepareVideoCanvas(){
+		if(video.readyState === video.HAVE_ENOUGH_DATA){
+			canvas.width = ratio
+			canvas.height = ratio * video.videoHeight / video.videoWidth
+			requestAnimationFrame(renderToCanvas)
+		}else{
+			requestAnimationFrame(prepareVideoCanvas)
+		}
+	}
+
+	function renderToCanvas(){
+		requestAnimationFrame(renderToCanvas)
+		ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+		var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height), pixel, i
+		if(!flag){
+			flag = true
+			console.log(imgData)
+			document.body.appendChild(document.createElement('b'))
+			for(i=0; i<imgData.data.length; i+=4){
+				pixel = document.createElement('i')
+				pixel.className = 'pixel'
+				pixel.style.background = 'rgb('+imgData.data[i]+','+imgData.data[i+1]+','+imgData.data[i+2]+')'
+				document.body.appendChild(pixel)
+				if((i/4)%(imgData.width) == 0){
+					pixel.style.clear = 'both'
+				}
+			}
+		}else{
+			for(i=0; i<imgData.data.length; i+=4){
+				pixel = document.body.childNodes[i/4]
+				pixel.style.background = 'rgb('+imgData.data[i]+','+imgData.data[i+1]+','+imgData.data[i+2]+')'
+			}
+		}
+	}
+})()
+</script>

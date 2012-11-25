@@ -1,0 +1,80 @@
+<!doctype html>
+<style type="text/css" media="screen">
+	
+</style>
+<script type="text/javascript" charset="utf-8">
+(function(){
+	var video, canvas = [], ctx = [], flag, width, height
+		// ratio = 80 //Para el experimento del dom
+		ratio = 200
+
+	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
+	
+	window.URL = window.URL || window.webkitURL
+
+	navigator.getUserMedia({video: true}, function(localMediaStream) { 
+		video = document.createElement("video")
+		video.autoplay = true
+		video.src = window.URL.createObjectURL(localMediaStream)
+		// video.style.display = 'none'
+		// document.body.appendChild(video)
+		for(var i=0; i<4; i++){
+			canvas[i] = document.createElement('canvas')
+			document.body.appendChild(canvas[i])
+			ctx[i] = canvas[i].getContext('2d')
+		}
+		prepareVideoCanvas()
+	}, function(error) {
+		console.log(error)
+	})
+
+	function prepareVideoCanvas(){
+		if(video.readyState === video.HAVE_ENOUGH_DATA){
+			width = ratio
+			height = ratio * video.videoHeight / video.videoWidth
+			for(var i=0; i<4; i++){
+				canvas[i].width = width
+				canvas[i].height = height
+			}
+			requestAnimationFrame(renderToCanvas)
+		}else{
+			requestAnimationFrame(prepareVideoCanvas)
+		}
+	}
+
+	function renderToCanvas(){
+		requestAnimationFrame(renderToCanvas)
+		ctx[0].drawImage(video, 0, 0, width, height)
+		
+		var imgData = ctx[0].getImageData(0, 0, width, height),
+			imgDatar = ctx[0].getImageData(0, 0, width, height),
+			imgDatag = ctx[0].getImageData(0, 0, width, height),
+			imgDatab = ctx[0].getImageData(0, 0, width, height), pixel, i
+
+		for(i=0; i<imgData.data.length; i+=4){
+			pixel = document.body.childNodes[i/4]
+			if( imgData.data[i+1] < imgData.data[i]  &&
+				imgData.data[i+2] < imgData.data[i] ){
+				tmp = imgDatar.data[i]
+				imgDatar.data[i] = imgDatar.data[i+1]
+				imgDatar.data[i+1] = tmp
+			}
+			else if( imgData.data[i] < imgData.data[i+1]  &&
+				imgData.data[i+2] < imgData.data[i+1] ){
+				tmp = imgDatag.data[i+1]
+				imgDatag.data[i+1] = imgDatag.data[i]
+				imgDatag.data[i] = tmp
+			}
+			else if( imgData.data[i] < imgData.data[i+2]  &&
+				imgData.data[i+1] < imgData.data[i+2] ){
+				tmp = imgDatab.data[i+2]
+				imgDatab.data[i+2] = imgDatab.data[i]
+				imgDatab.data[i] = tmp
+			}
+		}
+		ctx[1].putImageData(imgDatar,0,0)
+		ctx[2].putImageData(imgDatag,0,0)
+		ctx[3].putImageData(imgDatab,0,0)
+	}
+})()
+</script>
